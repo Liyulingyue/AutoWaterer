@@ -1,0 +1,31 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+optimum-intel==1.19.0
+nncf==2.13.0
+openvino==2024.4.0
+llama-index
+llama-index-readers-file
+llama-index-llms-openvino>=0.2.2
+llama-index-llms-huggingface>=0.2.8
+llama-index-embeddings-openvino>=0.2.0
+transformers==4.44.2
+openvino-genai==2024.4.0.0
+
+torch==2.3.0
+gradio
+openai-whisper==20231117 
+ffmpeg==1.4
+edge-tts
+openai
+torchvision
+
+# jupyter
+jupyterlab
+ipywidgets
+ipykernel>=5.0
+ipython>=7.16.3
+
+# 
+opencv-python
+pyyaml
+openai
+scikit-learn
