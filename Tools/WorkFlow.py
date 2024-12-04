@@ -11,7 +11,8 @@ from Tools.PhiVision import PhiVision
 from Tools.udp_helper import create_socket, udp_send
 from Tools.Camera import Camera
 from Tools.CarDetection import CarDetection
-from Tools.Qwen import QwenClass
+# from Tools.Qwen import QwenClass
+from Tools.ernie import ErnieClass
 import time
 
 from Tools.utils import find_closest_point_on_line, calculate_iou
@@ -22,7 +23,8 @@ dino = DINO_with_camera(camera=camera)
 phivision = PhiVision(device="GPU")
 nzhelper = NzHelper()
 server_socket = create_socket() # 控制器
-qwen = QwenClass()
+# qwen = QwenClass()
+llm = ErnieClass(access_token="*********")
 
 def init_plants():
     # 初始化，检索植物所在位置，记录植物的基础信息
@@ -789,7 +791,7 @@ def get_water_results(plants_records):
     "浇水时间": int,
 }}
 """
-        result_dict = qwen.get_llm_json_answer(prompt)
+        result_dict = llm.get_llm_json_answer(prompt)
         plants_records["Plants"][i]["water_time"] = result_dict["浇水时间"]
 
     # 保存植物列表到文件中
