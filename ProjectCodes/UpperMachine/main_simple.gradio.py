@@ -1,5 +1,5 @@
 import gradio as gr
-from Tools.WorkFlow import *
+
 
 def fn_refresh_camera():
     ret, frame = camera.get_frame()
@@ -28,41 +28,41 @@ def fn_init_plants(plants_records):
     return img, f'{plants_number}个植物', plants_records
 
 def fn_init_car(plants_records):
-    with open("Source/Logs/1.pkl", "rb") as f:
+    with open("ProjectCodes/UpperMachine/Source/Logs/1.pkl", "rb") as f:
         plants_records = pickle.load(f)
     plants_records = init_car2(plants_records)
     img = plants_records["CarInfo"]["init_car_img"]
     return img, f'车辆初始化完成，车辆长度{plants_records["CarInfo"]["height"]}pixels，车辆宽度{plants_records["CarInfo"]["width"]}pixels', plants_records
 
 def fn_init_preprocess(plants_records):
-    with open("Source/Logs/2.pkl", "rb") as f:
+    with open("ProjectCodes/UpperMachine/Source/Logs/2.pkl", "rb") as f:
         plants_records = pickle.load(f)
     plants_records = preprocessing2(plants_records) # save 3
     img = plants_records['InitDrawImg']
     return img, f'预处理已完成', plants_records
 
 def fn_move1(plants_records):
-    with open("Source/Logs/3.pkl", "rb") as f:
+    with open("ProjectCodes/UpperMachine/Source/Logs/3.pkl", "rb") as f:
         plants_records = pickle.load(f)
     plants_records = move_action1_simple(plants_records)
     img = plants_records["Plants"][0]["car_image"]
     return img, f'移动并采集到植物图像', plants_records
 
 def fn_calculate(plants_records):
-    with open("Source/Logs/4.pkl", "rb") as f:
+    with open("ProjectCodes/UpperMachine/Source/Logs/4.pkl", "rb") as f:
         plants_records = pickle.load(f)
     plants_records = get_water_results(plants_records)
     img = plants_records["Plants"][0]["car_image"]
     return img, f'第一个植物的浇水时常为{plants_records["Plants"][0]["water_time"]}', plants_records
 
 def fn_move2(plants_records):
-    with open("Source/Logs/5.pkl", "rb") as f:
+    with open("ProjectCodes/UpperMachine/Source/Logs/5.pkl", "rb") as f:
         plants_records = pickle.load(f)
     plants_records = move_action2_simple(plants_records)
     return None, f'移动并浇水已完成', plants_records
 
 def fn_get_feedback(plants_records):
-    with open("Source/Logs/6.pkl", "rb") as f:
+    with open("ProjectCodes/UpperMachine/Source/Logs/6.pkl", "rb") as f:
         plants_records = pickle.load(f)
     plants_records = get_feedback(plants_records)
     img = plants_records["Plants"][0]["feedback_img"]
@@ -78,7 +78,7 @@ def fn_all():
     plants_records = get_feedback(plants_records)  # save 7
 
 def fn_all_without_init():
-    with open("Source/Logs/5.pkl", "rb") as f:
+    with open("ProjectCodes/UpperMachine/Source/Logs/5.pkl", "rb") as f:
         plants_records = pickle.load(f)
     plants_records = move_action2(plants_records)  # save 6
     plants_records = get_feedback(plants_records)  # save 7

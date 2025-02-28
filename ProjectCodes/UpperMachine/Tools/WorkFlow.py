@@ -1,21 +1,20 @@
 import cv2
 import pickle
 
-import sklearn
 from PIL import Image
 import numpy as np
 
-from Tools.DINO import DINO_with_camera
-from Tools.NzHelper import NzHelper
-from Tools.PhiVision import PhiVision
-from Tools.udp_helper import create_socket, udp_send
-from Tools.Camera import Camera
-from Tools.CarDetection import CarDetection
+from ProjectCodes.UpperMachine.Tools.DINO import DINO_with_camera
+from ProjectCodes.UpperMachine.Tools.NzHelper import NzHelper
+from ProjectCodes.UpperMachine.Tools.PhiVision import PhiVision
+from ProjectCodes.UpperMachine.Tools.udp_helper import create_socket, udp_send
+from ProjectCodes.UpperMachine.Tools.Camera import Camera
+from ProjectCodes.UpperMachine.Tools.CarDetection import CarDetection
 # from Tools.Qwen import QwenClass
-from Tools.ernie import ErnieClass
+from ProjectCodes.UpperMachine.Tools.ernie import ErnieClass
 import time
 
-from Tools.utils import find_closest_point_on_line, calculate_iou
+from ProjectCodes.UpperMachine.Tools.utils import find_closest_point_on_line, calculate_iou
 
 camera = Camera(camera_id=0, scale=1) # 相机, 尺度默认为1
 car_detection = CarDetection(camera=camera)
