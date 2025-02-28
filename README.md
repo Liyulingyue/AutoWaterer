@@ -23,7 +23,7 @@
 ## 软件逻辑
 
 软件逻辑如下所示：
-![Workflows.png](Docs%2FImages%2FWorkflows.png)
+![Workflows.png](Docs/Images/Workflows.png)
 
 ## 快速开始
 施工中~
