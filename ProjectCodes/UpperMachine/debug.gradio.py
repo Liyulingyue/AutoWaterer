@@ -6,8 +6,9 @@ from Tools.CarDetection import CarDetection
 from Tools.DINO import DINO_with_camera
 
 car_controller = CarContorller()
-car_detection = CarDetection()
+
 camera = Camera()
+car_detection = CarDetection()
 dino = DINO_with_camera()
 
 
