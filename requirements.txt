@@ -26,6 +26,7 @@ ipython>=7.16.3
 
 # 
 opencv-python
+gradio
 pyyaml
 openai
 scikit-learn
