@@ -8,7 +8,11 @@ import requests
 from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
 
 class DINO_with_camera(object):
-    def __init__(self, model_id="Source/GroundingDINO", device="cpu", camera=None):
+    def __init__(self):
+        self.model_flag = False
+
+
+    def set_model(self, model_id="Source/GroundingDINO", device="cpu", camera=None):
         self.device = device
         self.camera = camera
 
@@ -16,13 +20,22 @@ class DINO_with_camera(object):
         self.processor = AutoProcessor.from_pretrained(model_id)
         self.model = AutoModelForZeroShotObjectDetection.from_pretrained(model_id).to(device)
 
-
         self.frame = None
         self.results = None
 
+        self.model_flag = True
 
+    def release_model(self):
+        self.processor = None
+        self.model = None
+
+        self.model_flag = False
 
     def infer(self, prompt="Everything", box_threshold=0.1, text_threshold=0.1):
+        if self.model_flag == False:
+            print("Please set model first.")
+            return None
+
         ret, frame = self.camera.get_frame()
         # 将捕获的帧从BGR转换为RGB，然后转换为PIL图像
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))

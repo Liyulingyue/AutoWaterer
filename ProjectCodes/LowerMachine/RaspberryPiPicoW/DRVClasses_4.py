@@ -1,3 +1,4 @@
+# 本文件是四个轮单独控制的程序
 from machine import Pin, PWM
 from drv8833 import DRV8833
 import time
@@ -79,9 +80,8 @@ class Wheel:
         self.drv_head.stop_b()
         self.drv_tail.stop_a()
         self.drv_tail.stop_b()
-        
-        
-        
+
+# 使用drv8833控制水泵
 class Water:
     def __init__(self, ha1, ha2, hb1, hb2):
         # ha1, ha2为有效位置，hb1,hb2为占位，无效

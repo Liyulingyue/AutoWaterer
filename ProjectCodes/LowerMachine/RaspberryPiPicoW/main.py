@@ -2,7 +2,9 @@ from DRVClasses import Wheel
 from Relay import Water
 from UDPHelper import UDPHelper
 
-wheel = Wheel(2,3,4,5,6,7,8,9)
+# wheel = Wheel(2,3,4,5,6,7,8,9)
+wheel = Wheel(6,7,8,9)
+
 water = Water(16)
 udp = UDPHelper()
 

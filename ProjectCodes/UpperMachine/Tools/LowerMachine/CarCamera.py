@@ -12,7 +12,6 @@ def get_car_camera_image(server_ip='192.168.2.113', port=80):
         # 连接到服务器
         sock.connect((server_ip, port))
 
-
         http_request = "GET"
         sock.sendall(http_request.encode())
 

@@ -5,15 +5,18 @@ import cv2
 
 class Camera(object):
     def __init__(self, camera_id=0, scale=1):
-        # 初始化摄像头
-        self.cap = cv2.VideoCapture(camera_id)  # 0是默认摄像头的索引
-        self.cap.set(3, 3840)  # width=3840
-        self.cap.set(4, 2160)  # height=2160
-        self.scale = scale
+        try:
+            # 初始化摄像头
+            self.cap = cv2.VideoCapture(camera_id)  # 0是默认摄像头的索引
+            self.cap.set(3, 3840)  # width=3840
+            self.cap.set(4, 2160)  # height=2160
+            self.scale = scale
 
-        # 激活摄像头
-        _, _ = self.cap.read()
-        time.sleep(3)
+            # 激活摄像头
+            _, _ = self.cap.read()
+            time.sleep(3)
+        except Exception as e:
+            print("Camera init error: {}".format(e))
 
     def get_frame(self):
         ret, frame = self.cap.read()

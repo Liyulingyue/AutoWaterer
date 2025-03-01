@@ -8,7 +8,10 @@ import yaml
 
 
 class CarDetection(object):
-    def __init__(self, model_path="Source/CarDetection", device="CPU", camera=None):
+    def __init__(self):
+        self.model_flag = False
+
+    def set_model(self, model_path="Source/CarDetection", device="CPU", camera=None):
         self.camera = camera
 
         # Initialize OpenVINO Runtime for detection.
@@ -32,8 +35,26 @@ class CarDetection(object):
         self.frame = None
         self.results = None
 
+        self.model_flag = True
+
+    def release_model(self):
+        # Release OpenVINO Runtime for detection.
+        self.det_model = None
+        self.det_compiled_model = None
+        self.det_input_layer = None
+        self.det_output_layer = None
+        self.config = None
+        self.label_list = None
+        self.input_size = None
+
+        self.model_flag = False
+
 
     def _infer(self, input_image):
+        if self.model_flag == False:
+            print("Please set model first.")
+            return None
+
         input_size = self.input_size
         scale_factor = [input_size[1] / input_image.shape[0], input_size[0] / input_image.shape[1]]
         factor = np.array(scale_factor, dtype=np.float32).reshape((1, 2))
@@ -49,6 +70,7 @@ class CarDetection(object):
         return det_results
 
     def infer(self):
+
         ret, frame = self.camera.get_frame()
         self.frame = copy.deepcopy(frame)
 

@@ -1,6 +1,7 @@
 import socket
 import threading
 
+# 作为服务器进行监听
 def udp_server(server_socket):
     print(f"UDP server up and listening on {server_socket.getsockname()[0]}:{server_socket.getsockname()[1]}")
     try:
@@ -12,22 +13,19 @@ def udp_server(server_socket):
     finally:
         server_socket.close()
 
-def create_socket():
+# 创建 socket 对象，默认绑定所有可用接口
+def create_socket(host="", port=8083):
     # 创建 socket 对象
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
     # 绑定端口号
-    host = ''  # 监听所有可用的接口
-    port = 8083
     server_socket.bind((host, port))
 
     return server_socket
 
-def udp_send(server_socket, message):
-    broadcast_address = '*************'
-    broadcast_port = 5000
-
+# 发送UDP报文
+def udp_send(server_socket, message, broadcast_address='255.255.255.255', broadcast_port=5000):
     # 将消息编码为字节
     broadcast_data = message.encode()
     # 发送广播消息
