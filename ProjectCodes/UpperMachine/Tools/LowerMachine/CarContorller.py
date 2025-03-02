@@ -32,7 +32,7 @@ class CarContorller(object):
         """
         向Pico设备发送数据。
         Args:
-            data (bytes): 要发送的数据，应为字节类型。
+            data (str): 要发送的数据，应为字节类型。
         Returns:
             bool: 如果发送成功则返回True，否则返回False。
         Raises:
