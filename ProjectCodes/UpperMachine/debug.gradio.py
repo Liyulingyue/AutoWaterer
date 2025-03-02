@@ -4,22 +4,36 @@ from Tools.LowerMachine.CarContorller import CarContorller
 from Tools.Camera import Camera
 from Tools.CarDetection import CarDetection
 from Tools.DINO import DINO_with_camera
+from Tools.MiniCPMVL import MiniCPMVL
 
 car_controller = CarContorller()
 
 camera = Camera()
 car_detection = CarDetection()
 dino = DINO_with_camera()
+minicpm = MiniCPMVL()
 
 
 with gr.Blocks() as App:
     gr.Markdown("""# 小车调试工具""")
 
-    with gr.Tab("车载摄像头调试"):
-        img_esp32cam = gr.Image(label="车载摄像头画面")
-        txt_esp32cam_ip = gr.Textbox(label="ESP32CAM IP", value="192.168.2.140")
-        txt_esp32cam_port = gr.Number(label="ESP32CAM Port", value=80)
-        btn_esp32cam = gr.Button("获取车载摄像头画面")
+    with gr.Tab("车载摄像头&VL模型调试"):
+        img_esp32cam = gr.Image(label="摄像头画面/上传图片", interactive=True)
+        with gr.Row():
+            txt_esp32cam_ip = gr.Textbox(label="ESP32CAM IP", value="192.168.2.140")
+            txt_esp32cam_port = gr.Number(label="ESP32CAM Port", value=80)
+            btn_esp32cam = gr.Button("获取车载摄像头画面")
+        with gr.Row():
+            txt_cpm_state = gr.Textbox(label="CPM模型状态", value=False)
+            btn_cpm_state = gr.Button("获取CPM模型状态")
+        with gr.Row():
+            txt_cpm_model_path = gr.Textbox(label="CPM模型路径", value="Source/MiniCPM-V-2_6-ov")
+            btn_cpm_set = gr.Button("加载CPM模型")
+            btn_cpm_close = gr.Button("关闭CPM模型")
+        txt_cpm_prompt = gr.Textbox(label="CPM模型Prompt", value="Describe the image")
+        txt_cpm_result = gr.Textbox(label="CPM模型结果", value="")
+        btn_cpm_infer = gr.Button("获取CPM模型结果")
+
     with gr.Tab("车载传感器控制"):
         gr.Markdown("""
         调试前请创建Socket，调试结束后务必关闭Socket，你可以通过获取Socket状态来判断Socket是否创建成功或关闭成功。
@@ -64,6 +78,11 @@ with gr.Blocks() as App:
 
 
     btn_esp32cam.click(fn=get_car_camera_image, inputs=[txt_esp32cam_ip, txt_esp32cam_port], outputs=[img_esp32cam])
+    btn_cpm_state.click(fn=lambda: minicpm.model_flag, outputs=[txt_cpm_state])
+    btn_cpm_set.click(fn=lambda x: minicpm.set_model(model_path=x, device="CPU"), inputs=[txt_cpm_model_path])
+    btn_cpm_close.click(fn=minicpm.release_model)
+    btn_cpm_infer.click(fn=lambda x, y: minicpm.infer(x, y), inputs=[txt_cpm_prompt,img_esp32cam], outputs=[txt_cpm_result])
+
 
     btn_pico_socket_state.click(fn=car_controller.get_socket_status, outputs=[txt_pico_socket_state])
     btn_pico_socket_connect.click(fn=car_controller.set_socket, inputs=[txt_pico_host, txt_pico_port, txt_pico_target_address, txt_pico_target_port], outputs=[])

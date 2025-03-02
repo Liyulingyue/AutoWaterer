@@ -1,4 +1,5 @@
 import gradio as gr
+from Tools.WorkFlow import *
 
 
 def fn_refresh_camera():
@@ -6,7 +7,7 @@ def fn_refresh_camera():
     return frame
 
 def fn_refresh_car_camera():
-    img, img_flag = nzhelper.get_image()
+    img = get_car_camera_image(server_ip=ESP32Cam_IP, port=ESP32Cam_IP)
     return img
 
 def fn_refresh_dino():

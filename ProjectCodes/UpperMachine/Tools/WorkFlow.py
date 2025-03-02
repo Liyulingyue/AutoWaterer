@@ -4,26 +4,35 @@ import pickle
 from PIL import Image
 import numpy as np
 
-from ProjectCodes.UpperMachine.Tools.DINO import DINO_with_camera
-from ProjectCodes.UpperMachine.Tools.NzHelper import NzHelper
-from ProjectCodes.UpperMachine.Tools.PhiVision import PhiVision
-from ProjectCodes.UpperMachine.Tools.udp_helper import create_socket, udp_send
-from ProjectCodes.UpperMachine.Tools.Camera import Camera
-from ProjectCodes.UpperMachine.Tools.CarDetection import CarDetection
-# from Tools.Qwen import QwenClass
-from ProjectCodes.UpperMachine.Tools.ernie import ErnieClass
+from .LowerMachine.CarContorller import CarContorller
+from .LowerMachine.CarCamera import get_car_camera_image
+
+from .Camera import Camera
+from .CarDetection import CarDetection
+from .DINO import DINO_with_camera
+
+from .MiniCPMVL import MiniCPMVL
+from .Ernie import ErnieClass
+
+from .udp_helper import create_socket, udp_send
+from .utils import find_closest_point_on_line, calculate_iou
+
 import time
 
-from ProjectCodes.UpperMachine.Tools.utils import find_closest_point_on_line, calculate_iou
+car_controller = CarContorller()
 
-camera = Camera(camera_id=0, scale=1) # 相机, 尺度默认为1
-car_detection = CarDetection(camera=camera)
-dino = DINO_with_camera(camera=camera)
-phivision = PhiVision(device="GPU")
-nzhelper = NzHelper()
-server_socket = create_socket() # 控制器
-# qwen = QwenClass()
+camera = Camera()
+car_detection = CarDetection()
+dino = DINO_with_camera()
+minicpm = MiniCPMVL()
 llm = ErnieClass(access_token="*********")
+
+ESP32Cam_IP = '192.168.2.113'
+ESP32Cam_PORT = 80
+car_controller.set_socket(host="", port=8083, pico_address="192.168.2.236", pico_port=5000)
+car_detection.set_model(model_path="Source/CarDetection", device="CPU", camera=camera)
+dino.set_model(model_id="Source/GroundingDINO", device="cpu", camera=camera)
+minicpm.set_model(model_path="Source/MiniCPM-V-2_6-ov", device="CPU")
 
 def init_plants():
     # 初始化，检索植物所在位置，记录植物的基础信息
@@ -245,13 +254,13 @@ def init_car(plants_records):
 
     # message = f"{action_type} {action_sub} {action_time:.3f}"
     message = f"{action_type} {action_sub_forward} {action_time:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time * 3)
 
     car_dict2 = car_search()
 
     message = f"{action_type} {action_sub_backward} {action_time:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time * 3)
 
     x1 = car_dict1["center"][0]
@@ -294,13 +303,13 @@ def init_car2 (plants_records):
 
     # message = f"{action_type} {action_sub} {action_time:.3f}"
     message = f"{action_type} {action_sub_forward} {action_time:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time * 3)
 
     car_dict2 = car_search2()
 
     message = f"{action_type} {action_sub_backward} {action_time:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time * 3)
 
     x1 = car_dict1["center"][0]
@@ -467,12 +476,12 @@ def fix_car_direction(dir="x"):
     current_x1, current_y1 = get_car_center()
     # message = f"{action_type} {action_sub} {action_time:.3f}"
     message = f"{action_type} {action_sub_forward} {action_time:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time * 2)
 
     current_x2, current_y2 = get_car_center()
     message = f"{action_type} {action_sub_backward} {action_time:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time * 2)
 
     dx = current_x2 - current_x1
@@ -488,7 +497,7 @@ def fix_car_direction(dir="x"):
         action_sub = 1 + 2
         action_time = 0.1
         message = f"{action_type} {action_sub} {action_time:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
         time.sleep(action_time * 2)
         fix_car_direction(dir=dir)
     elif dir == "x" and check_value < -30:
@@ -496,7 +505,7 @@ def fix_car_direction(dir="x"):
         action_sub = 1 + 1
         action_time = 0.1
         message = f"{action_type} {action_sub} {action_time:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
         time.sleep(action_time * 2)
         fix_car_direction(dir=dir)
     elif dir == "y" and check_value > 30:
@@ -504,7 +513,7 @@ def fix_car_direction(dir="x"):
         action_sub = 1 + 1
         action_time = 0.1
         message = f"{action_type} {action_sub} {action_time:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
         time.sleep(action_time * 2)
         fix_car_direction(dir=dir)
     elif dir == "y" and check_value < -30:
@@ -512,7 +521,7 @@ def fix_car_direction(dir="x"):
         action_sub = 1 + 2
         action_time = 0.1
         message = f"{action_type} {action_sub} {action_time:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
         time.sleep(action_time * 2)
         fix_car_direction(dir=dir)
 
@@ -534,12 +543,12 @@ def fix_car_pos(target_value, dir="x"):
     if abs(check_value) > 20:
         if check_value > 0:
             message = f"{action_type} {action_sub_backward} {action_time:.3f}"
-            udp_send(server_socket, message)
+            car_controller.send_to_pico(message)
             time.sleep(action_time * 2)
             fix_car_pos(target_value=target_value, dir=dir)
         else:
             message = f"{action_type} {action_sub_forward} {action_time:.3f}"
-            udp_send(server_socket, message)
+            car_controller.send_to_pico(message)
             time.sleep(action_time * 2)
             fix_car_pos(target_value=target_value, dir=dir)
 
@@ -554,7 +563,7 @@ def fit_car_pos_closely(target_x, target_y):
     action_sub2 = 0
     action_time2 = 0.1
     message = f"{action_type2} {action_sub2} {action_time2:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time2 * 1.5)
 
     x2, y2 = get_car_center()
@@ -572,7 +581,7 @@ def fit_car_pos_closely(target_x, target_y):
     while 1:
         # 步进式操作
         message = f"{action_type2} {action_sub2} {action_time2:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
         time.sleep(action_time2 * 1.5)
 
         current_x, current_y = get_car_center()
@@ -596,13 +605,13 @@ def move_to_y(target_y, dis_per_sec):
         action_sub1 = 0
         action_time1 = abs(dy) / dis_per_sec
         message = f"{action_type1} {action_sub1} {action_time1:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
     else:
         action_type1 = 0
         action_sub1 = 1
         action_time1 = abs(dy) / dis_per_sec
         message = f"{action_type1} {action_sub1} {action_time1:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
     time.sleep(action_time1 * 1.5)
 
     fix_car_pos(target_value=target_y, dir="y")
@@ -621,13 +630,13 @@ def move_to_x(target_x, dis_per_sec):
         action_sub1 = 0
         action_time1 = abs(dx) / dis_per_sec
         message = f"{action_type1} {action_sub1} {action_time1:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
     else:
         action_type1 = 0
         action_sub1 = 1
         action_time1 = abs(dx) / dis_per_sec
         message = f"{action_type1} {action_sub1} {action_time1:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
     time.sleep(action_time1 * 1.5)
 
     fix_car_pos(target_value=target_x, dir="x")
@@ -641,7 +650,7 @@ def move_line_closely(target_x, target_y, dis_per_sec):
     action_sub2 = 0
     action_time2 = 0.1
     message = f"{action_type2} {action_sub2} {action_time2:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time2 * 1.5)
 
     x2, y2 = get_car_center()
@@ -659,7 +668,7 @@ def move_line_closely(target_x, target_y, dis_per_sec):
     dis = ((x2 - closest_x) ** 2 + (y2 - closest_y) ** 2) ** 0.5
     action_time2 = dis / dis_per_sec
     message = f"{action_type2} {action_sub2} {action_time2:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time2 * 1.5)
 
     fit_car_pos_closely(target_x, target_y)
@@ -672,7 +681,7 @@ def move_to(target_x, target_y, dis_per_sec):
     action_sub2 = 1 + 2
     action_time2 = 1.2 # 转向时间
     message = f"{action_type2} {action_sub2} {action_time2:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time2 * 1.5)
 
     move_to_x(target_x, dis_per_sec)
@@ -693,7 +702,7 @@ def move_back(target_x, target_y, dis_per_sec):
     action_sub2 = 1 + 4
     action_time2 = 1.2 # 转向时间
     message = f"{action_type2} {action_sub2} {action_time2:.3f}"
-    udp_send(server_socket, message)
+    car_controller.send_to_pico(message)
     time.sleep(action_time2 * 1.5)
 
     move_to_y(target_y, dis_per_sec)
@@ -711,7 +720,7 @@ def move_action1(plants_records):
         dis_per_sec = plants_records["CarInfo"]["dis_per_sec"]
 
         move_to(target_x, target_y, dis_per_sec)
-        img, img_flag = nzhelper.get_image()
+        img = get_car_camera_image(server_ip=ESP32Cam_IP, port=ESP32Cam_IP)
         plants_records["Plants"][i]["car_image"] = img
         plants_records["Plants"][i]["new_image"] = img
 
@@ -734,7 +743,7 @@ def move_action1_simple(plants_records):
         dis_per_sec = plants_records["CarInfo"]["dis_per_sec"]
 
         move_to_simple(target_x, target_y, dis_per_sec)
-        img, img_flag = nzhelper.get_image()
+        img = get_car_camera_image(server_ip=ESP32Cam_IP, port=ESP32Cam_IP)
         plants_records["Plants"][i]["car_image"] = img
         plants_records["Plants"][i]["new_image"] = img
 
@@ -757,7 +766,7 @@ def move_action1_simple2(plants_records):
         dis_per_sec = plants_records["CarInfo"]["dis_per_sec"]
 
         move_to_simple2(target_x, target_y, dis_per_sec)
-        img, img_flag = nzhelper.get_image()
+        img = get_car_camera_image(server_ip=ESP32Cam_IP, port=ESP32Cam_IP)
         plants_records["Plants"][i]["car_image"] = img
         plants_records["Plants"][i]["new_image"] = img
 
@@ -774,10 +783,11 @@ def move_action1_simple2(plants_records):
 def get_water_results(plants_records):
     for i in range(len(plants_records["Plants"])):
         img = plants_records["Plants"][i]["car_image"]
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # 将BGR转换为RGB
-        pil_image = Image.fromarray(img_rgb)
-        prompt = "描述植物的生长状态，，判断土壤是否潮湿，植物是否有蔫的情况，你的描述将用于指导植物的浇水，请尽可能简单回答。"
-        phi_results = phivision.infer_with_single_img(pil_image, prompt)
+        # img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # 将BGR转换为RGB
+        # pil_image = Image.fromarray(img_rgb)
+        prompt = "描述植物的生长状态，判断土壤是否潮湿，植物是否有蔫的情况，你的描述将用于指导植物的浇水，请尽可能简单回答。"
+        # phi_results = phivision.infer_with_single_img(pil_image, prompt)
+        phi_results = minicpm.infer(prompt, img)
         plants_records["Plants"][i]["phi_results"] = phi_results
 
         prompt = f"""
@@ -809,7 +819,7 @@ def move_action2(plants_records):
         dis_per_sec = plants_records["CarInfo"]["dis_per_sec"]
 
         move_to(target_x, target_y, dis_per_sec)
-        img, img_flag = nzhelper.get_image()
+        img = get_car_camera_image(server_ip=ESP32Cam_IP, port=ESP32Cam_IP)
         try:
             plants_records["Plants"][i]["old_image"] = plants_records["Plants"][i]["new_image"]
         except:
@@ -822,7 +832,7 @@ def move_action2(plants_records):
         action_sub = 0
         action_time = water_time
         message = f"{action_type} {action_sub} {action_time:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
         time.sleep(action_time * 2)
 
         move_back(car_x, car_y, dis_per_sec)
@@ -842,7 +852,7 @@ def move_action2_simple(plants_records):
         dis_per_sec = plants_records["CarInfo"]["dis_per_sec"]
 
         move_to_simple(target_x, target_y, dis_per_sec)
-        img, img_flag = nzhelper.get_image()
+        img = get_car_camera_image(server_ip=ESP32Cam_IP, port=ESP32Cam_IP)
         try:
             plants_records["Plants"][i]["old_image"] = plants_records["Plants"][i]["new_image"]
         except:
@@ -855,7 +865,7 @@ def move_action2_simple(plants_records):
         action_sub = 0
         action_time = water_time
         message = f"{action_type} {action_sub} {action_time:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
         time.sleep(action_time * 2)
 
         move_back_simple(car_x, car_y, dis_per_sec)
@@ -875,7 +885,7 @@ def move_action2_simple2(plants_records):
         dis_per_sec = plants_records["CarInfo"]["dis_per_sec"]
 
         move_to_simple2(target_x, target_y, dis_per_sec)
-        img, img_flag = nzhelper.get_image()
+        img = get_car_camera_image(server_ip=ESP32Cam_IP, port=ESP32Cam_IP)
         try:
             plants_records["Plants"][i]["old_image"] = plants_records["Plants"][i]["new_image"]
         except:
@@ -888,7 +898,7 @@ def move_action2_simple2(plants_records):
         action_sub = 0
         action_time = water_time
         message = f"{action_type} {action_sub} {action_time:.3f}"
-        udp_send(server_socket, message)
+        car_controller.send_to_pico(message)
         time.sleep(action_time * 2)
 
         move_to_simple2(car_x, car_y, dis_per_sec)
@@ -910,10 +920,10 @@ def get_feedback(plants_records):
         com_img.paste(old_img, (0, 0))  # 粘贴image到左边
         com_img.paste(new_img, (new_img.width, 0))  # 粘贴image2到右边
         prompt = "左边的图是前一天拍摄的植物照片，右边的图是今天拍摄的植物照片，请你比较前一天和今天拍摄的照片中植物的生长状态并给出养护建议，尽可能简单回答。"
-        phi_results = phivision.infer_with_single_img(com_img, prompt)
-
+        # phi_results = phivision.infer_with_single_img(com_img, prompt)
         com_img_np = np.array(com_img)
         com_img_bgr = cv2.cvtColor(com_img_np, cv2.COLOR_RGB2BGR)
+        phi_results = minicpm.infer(prompt, com_img_bgr)
         plants_records["Plants"][i]["feedback_img"] = com_img_bgr
         plants_records["Plants"][i]["feedback_str"] = phi_results
 
