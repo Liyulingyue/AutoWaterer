@@ -18,3 +18,14 @@ ESP32Cam的固件采用 https://github.com/lemariva/micropython-camera-driver/bl
 
 ## 下位机硬件组成与连接方式
 ![LowerMachine.png](../../Docs/Images/LowerMachine.png)
+
+信号传输的引脚连接方式如下（供电注意正负极不要反接即可）
+
+|引脚1|引脚2|
+|--|--|
+|Pico GP6|Drv8833 AIN1|
+|Pico GP7|Drv8833 AIN2|
+|Pico GP8|Drv8833 BIN1|
+|Pico GP9|Drv8833 BIN1|
+|Pico GP16|继电器 SIG|
+
